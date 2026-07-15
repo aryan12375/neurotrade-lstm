@@ -15,6 +15,7 @@ env/
 
 # ML artifacts
 saved_models/
+models/
 data/
 logs/
 

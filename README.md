@@ -128,10 +128,10 @@ neurotrade/
 │   └── train.py                 # CLI training script
 ├── tests/
 │   └── test_backend.py          # Pytest test suite (25 tests)
-├── saved_models/                # Auto-created on first run
+├── models/                      # MODEL_DIR used by the provided .env.example
 ├── data/                        # Auto-created on first run
 ├── logs/                        # Auto-created on first run
-├── lstm_stock_predictor.html    # Frontend dashboard (drop-in)
+├── lstm_stock_predictor_fixed.html # Frontend dashboard (drop-in)
 ├── run.py                       # Server entry point
 ├── requirements.txt
 └── .env.example                 # Copy to .env and configure
@@ -156,8 +156,8 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum you can leave everything as default
-# Reddit credentials are optional (falls back to simulated data)
+# Edit .env; replace optional credential placeholders or clear them to use
+# the built-in local fallbacks.
 ```
 
 ### 3. Train Your First Model
@@ -166,7 +166,7 @@ cp .env.example .env
 # Train AAPL (takes ~3-5 minutes on CPU, ~1 min on GPU)
 python scripts/train.py --symbol AAPL
 
-# Train the full default watchlist (AAPL, NVDA, TSLA, MSFT, AMZN)
+# Train every symbol configured in DEFAULT_WATCHLIST
 python scripts/train.py --all
 
 # Custom options
@@ -195,7 +195,7 @@ python run.py
 
 ### 5. Open the Dashboard
 
-Simply open `lstm_stock_predictor.html` in your browser.
+Simply open `lstm_stock_predictor_fixed.html` in your browser.
 The dashboard auto-connects to `http://localhost:8000/api/v1`.
 
 ---
@@ -223,7 +223,7 @@ Options:
 
 After training `AAPL`, you'll have:
 ```
-saved_models/
+models/
 ├── AAPL_model.keras     # Full Keras model (architecture + weights)
 ├── AAPL_scaler.pkl      # MinMaxScaler (must match training features)
 └── AAPL_eval.json       # Evaluation metrics + epoch history + WF folds
@@ -243,7 +243,7 @@ Full interactive docs: **http://localhost:8000/docs**
 | `GET` | `/api/v1/stocks/{symbol}/history` | Raw OHLCV bars |
 | `GET` | `/api/v1/stocks/{symbol}/indicators` | All technical indicators |
 | `GET` | `/api/v1/stocks/{symbol}/predict` | Next-day LSTM prediction |
-| `GET` | `/api/v1/stocks/{symbol}/forecast` | 10-day price forecast |
+| `GET` | `/api/v1/stocks/{symbol}/forecast` | Configurable multi-day price forecast |
 | `GET` | `/api/v1/stocks/{symbol}/shap` | SHAP feature attributions |
 | `GET` | `/api/v1/stocks/{symbol}/correlations` | Feature-target correlations |
 | `GET` | `/api/v1/stocks/{symbol}/eval` | Model evaluation metrics |
@@ -251,6 +251,7 @@ Full interactive docs: **http://localhost:8000/docs**
 | `GET` | `/api/v1/hype` | Reddit mention counts |
 | `GET` | `/api/v1/models/status` | Which models are trained |
 | `POST` | `/api/v1/train` | Train/retrain a model |
+| `POST` | `/api/v1/ai-advice` | Optional Gemini-generated educational commentary |
 
 ### Example Requests
 
@@ -298,7 +299,7 @@ curl http://localhost:8000/api/v1/watchlist
 
 ## Frontend Integration
 
-The dashboard (`lstm_stock_predictor.html`) connects to the backend via the `BACKEND_URL` constant at the top of its `<script>` section. By default:
+The dashboard (`lstm_stock_predictor_fixed.html`) connects to the backend via the `BACKEND_URL` constant at the top of its `<script>` section. By default:
 
 ```javascript
 const BACKEND_URL = 'http://localhost:8000/api/v1';
@@ -327,8 +328,9 @@ PORT=8000
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:5500
 
 # Model hyperparameters
+MODEL_DIR=models
 SEQUENCE_LENGTH=60       # days of history fed into LSTM
-FORECAST_DAYS=10
+FORECAST_DAYS=7
 EPOCHS=50
 LEARNING_RATE=0.001
 DROPOUT_RATE=0.2
@@ -336,15 +338,16 @@ LSTM_UNITS_1=128
 LSTM_UNITS_2=64
 
 # Data
-DEFAULT_PERIOD=5y        # yfinance history period
-CACHE_TTL_SECONDS=300    # API response cache lifetime
+DEFAULT_PERIOD=2y        # yfinance history period
+CACHE_TTL_SECONDS=900    # API response cache lifetime
 
 # Watchlist
-DEFAULT_WATCHLIST=AAPL,NVDA,TSLA,MSFT,AMZN
+DEFAULT_WATCHLIST=AAPL,MSFT,NVDA,TSLA
 
 # Reddit (optional)
-REDDIT_CLIENT_ID=your_id
-REDDIT_CLIENT_SECRET=your_secret
+REDDIT_CLIENT_ID=
+REDDIT_CLIENT_SECRET=
+GEMINI_API_KEY=              # optional; required only for /api/v1/ai-advice
 ```
 
 ---

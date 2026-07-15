@@ -494,6 +494,7 @@ select{background:var(--card2);border:1px solid var(--border);color:var(--text2)
 </div>
 
 <script>
+const BACKEND_URL = 'http://localhost:8000/api/v1';
 // ─── DATA ────────────────────────────────────────────────
 const STOCKS={
   AAPL:{name:'Apple Inc.',     price:189.84,change:2.31, pct:1.23, col:'#c9932a'},
@@ -855,7 +856,7 @@ async function getAIAdvice(){
   Keep your response under 4 sentences. Be concise and data-focused.`;
 
   try {
-    const res = await fetch('http://localhost:8000/api/v1/ai-advice', {
+    const res = await fetch(`${BACKEND_URL}/ai-advice`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({prompt: prompt})
@@ -879,10 +880,10 @@ async function getAIAdvice(){
 // ─── BACKEND ──────────────────────────────────────────────
 async function checkBackend(){
   try{
-    const r=await fetch('http://localhost:8000/api/v1/health',{signal:AbortSignal.timeout(2000)});
+    const r=await fetch(`${BACKEND_URL}/health`,{signal:AbortSignal.timeout(2000)});
     if(r.ok){
       document.getElementById('apiStatus').textContent='API Connected';
-      try{const wl=await (await fetch('http://localhost:8000/api/v1/watchlist')).json();if(wl.watchlist)wl.watchlist.forEach(item=>{if(STOCKS[item.symbol]&&item.current_price)STOCKS[item.symbol].price=item.current_price;});buildWatchlist();buildTickers();updateHero();}catch{}
+      try{const wl=await (await fetch(`${BACKEND_URL}/watchlist`)).json();if(wl.watchlist)wl.watchlist.forEach(item=>{if(STOCKS[item.symbol]&&item.current_price)STOCKS[item.symbol].price=item.current_price;});buildWatchlist();buildTickers();updateHero();}catch{}
     }
   }catch{}
 }
